@@ -18,7 +18,7 @@ void forwardKinematics(const Posture& posture, Bone* bone) {
   // Write your code here
   bone->startPosition = Eigen::Vector3f::Zero();
   bone->endPosition = Eigen::Vector3f::Zero();
-  bone->rotation = Eigen::Quaternionf::Identity();
+  bone->rotation = posture.rotations[0];
 
   std::vector<bool> flag(30,0);
   std::vector<Bone*> roots;
@@ -36,8 +36,9 @@ void forwardKinematics(const Posture& posture, Bone* bone) {
         if (next->sibling != nullptr) {
           root = next;
         }
-        next->startPosition = next->parent->endPosition;
-        next->endPosition = next->startPosition + next->direction * next->length;
+        next->rotation = next->parent->rotation * next->rotationParentCurrent * posture.rotations[next->idx];
+        next->startPosition = posture.translations[next->parent->idx] + next->parent->endPosition;
+        next->endPosition = next->startPosition + next->rotation * next->direction * next->length;
         flag[next->idx] = true;
         next = next->child;
       }
@@ -63,14 +64,14 @@ void forwardKinematics(const Posture& posture, Bone* bone) {
         if (next->sibling != nullptr) {
           root = next;
         }
-        next->startPosition = next->parent->endPosition;
-        next->endPosition = next->startPosition + next->direction * next->length;
+        next->rotation = next->parent->rotation * next->rotationParentCurrent * posture.rotations[next->idx];
+        next->startPosition = posture.translations[next->parent->idx] + next->parent->endPosition;
+        next->endPosition = next->startPosition + next->rotation * next->direction * next->length;
         flag[next->idx] = true;
         next = next->child;
       }
     }
   }
-  std::cout << std::endl;
 }
 
 Motion motionWarp(const Motion& motion, int oldKeyframe, int newKeyframe) {

@@ -80,6 +80,15 @@ Motion motionWarp(const Motion& motion, int oldKeyframe, int newKeyframe) {
   int totalBones = static_cast<int>(motion.posture(0).rotations.size());
   for (int i = 0; i < totalFrames; ++i) {
     // Maybe set some per=Frame variables here
+    double frame;
+    if (i > oldKeyframe) {
+      frame = newKeyframe + (i - oldKeyframe) * ((double)((totalFrames - 1) - newKeyframe) / (double)((totalFrames - 1) - oldKeyframe));
+    } else
+      frame = i * ((double)newKeyframe / (double)oldKeyframe);
+    
+    int lower = floor(frame);
+    int upper = ceil(frame);
+    double fromstart = frame - lower;
     for (int j = 0; j < totalBones; ++j) {
       // TODO (Time warping)
       // original: |--------------|---------------|
@@ -97,8 +106,15 @@ Motion motionWarp(const Motion& motion, int oldKeyframe, int newKeyframe) {
       //   3. You should use spherical linear interpolation for rotations.
 
       // Write your code here
+      Eigen::Vector3f t1 = motion.posture(lower).translations[j];
+      Eigen::Vector3f t2 = motion.posture(upper).translations[j];
+      Eigen::Quaternionf r1 = motion.posture(lower).rotations[j];
+      Eigen::Quaternionf r2 = motion.posture(upper).rotations[j];
+      newMotion.posture(i).translations[j] = t1 + fromstart * (t2 - t1);
+      newMotion.posture(i).rotations[j] = r1.slerp(fromstart, r2);
     }
   }
+  //std::cout << std::endl;
   return newMotion;
 }
 
